@@ -136,15 +136,15 @@ class ColabPM7Calculator:
     def parse_mopac_output(self, output_file):
         """Parse MOPAC output file for properties with improved parsing."""
         properties = {}
-
+    
         try:
             with open(output_file, 'r') as f:
                 content = f.read()
                 lines = content.split('\n')
-
+    
             print(f"🔍 Parsing MOPAC output: {output_file}")
-
-            # 1. Parse heat of formation - IMPROVED
+    
+            # 1. Parse heat of formation
             hof_pattern = r"FINAL\s+HEAT\s+OF\s+FORMATION\s*=\s*([-+]?\d+\.\d+)\s*KCAL/MOL"
             hof_match = re.search(hof_pattern, content, re.IGNORECASE)
             if hof_match:
@@ -152,34 +152,62 @@ class ColabPM7Calculator:
                 print(f"   ✅ Heat of Formation: {properties['heat_of_formation']:.3f} kcal/mol")
             else:
                 print("   ❌ Heat of Formation: Not found")
-
-            # 2. Parse dipole moment - FIXED
-            # Look for the SUM line in the dipole section
+    
+            # 2. Parse dipole moment
             dipole_pattern = r"SUM\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
             dipole_match = re.search(dipole_pattern, content)
             if dipole_match:
-                properties['dipole_moment'] = float(dipole_match.group(4))  # Total dipole moment
+                properties['dipole_moment'] = float(dipole_match.group(4))
                 properties['dipole_x'] = float(dipole_match.group(1))
                 properties['dipole_y'] = float(dipole_match.group(2))
                 properties['dipole_z'] = float(dipole_match.group(3))
                 print(f"   ✅ Dipole Moment: {properties['dipole_moment']:.3f} Debye")
             else:
                 print("   ❌ Dipole Moment: Not found")
-
-            # 3. Parse HOMO/LUMO energies - IMPROVED
+    
+            # 3. Parse HOMO/LUMO energies - Handle both closed and open shell systems
             homo_lumo_pattern = r"HOMO\s+LUMO\s+ENERGIES\s*\(EV\)\s*=\s*([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
             homo_lumo_match = re.search(homo_lumo_pattern, content)
+            
             if homo_lumo_match:
+                # Closed shell system
                 properties['homo_ev'] = float(homo_lumo_match.group(1))
                 properties['lumo_ev'] = float(homo_lumo_match.group(2))
                 properties['gap_ev'] = properties['lumo_ev'] - properties['homo_ev']
+                properties['spin_state'] = 'closed_shell'
                 print(f"   ✅ HOMO: {properties['homo_ev']:.3f} eV")
                 print(f"   ✅ LUMO: {properties['lumo_ev']:.3f} eV")
                 print(f"   ✅ HOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
             else:
-                print("   ❌ HOMO/LUMO energies: Not found")
-
-            # 4. Parse ionization potential - NEW
+                # Try SOMO/LUMO pattern (open shell)
+                alpha_somo_pattern = r"ALPHA\s+SOMO\s+LUMO\s*\(EV\)\s*=\s*([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
+                beta_somo_pattern = r"BETA\s+SOMO\s+LUMO\s*\(EV\)\s*=\s*([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
+                
+                alpha_match = re.search(alpha_somo_pattern, content)
+                beta_match = re.search(beta_somo_pattern, content)
+                
+                if alpha_match and beta_match:
+                    # Open shell system
+                    properties['alpha_somo_ev'] = float(alpha_match.group(1))
+                    properties['alpha_lumo_ev'] = float(alpha_match.group(2))
+                    properties['beta_somo_ev'] = float(beta_match.group(1))
+                    properties['beta_lumo_ev'] = float(beta_match.group(2))
+                    
+                    # For compatibility, set HOMO to the higher SOMO energy
+                    properties['homo_ev'] = max(properties['alpha_somo_ev'], properties['beta_somo_ev'])
+                    properties['lumo_ev'] = min(properties['alpha_lumo_ev'], properties['beta_lumo_ev'])
+                    properties['gap_ev'] = properties['lumo_ev'] - properties['homo_ev']
+                    properties['spin_state'] = 'open_shell'
+                    
+                    print(f"   ✅ Alpha SOMO: {properties['alpha_somo_ev']:.3f} eV")
+                    print(f"   ✅ Beta SOMO: {properties['beta_somo_ev']:.3f} eV")
+                    print(f"   ✅ Effective HOMO: {properties['homo_ev']:.3f} eV")
+                    print(f"   ✅ Effective LUMO: {properties['lumo_ev']:.3f} eV")
+                    print(f"   ✅ SOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
+                else:
+                    print("   ❌ HOMO/LUMO/SOMO energies: Not found")
+    
+            # 4. Parse ionization potential
             ip_pattern = r"IONIZATION\s+POTENTIAL\s*=\s*([-+]?\d+\.\d+)\s*EV"
             ip_match = re.search(ip_pattern, content, re.IGNORECASE)
             if ip_match:
@@ -187,65 +215,96 @@ class ColabPM7Calculator:
                 print(f"   ✅ Ionization Potential: {properties['ionization_potential']:.3f} eV")
             else:
                 print("   ❌ Ionization Potential: Not found")
-
-            # 5. Parse COSMO area and volume - NEW
+    
+            # 5. Parse COSMO area and volume
             cosmo_area_pattern = r"COSMO\s+AREA\s*=\s*([-+]?\d+\.\d+)\s*SQUARE\s+ANGSTROMS"
             cosmo_area_match = re.search(cosmo_area_pattern, content, re.IGNORECASE)
             if cosmo_area_match:
                 properties['cosmo_area'] = float(cosmo_area_match.group(1))
                 print(f"   ✅ COSMO Area: {properties['cosmo_area']:.2f} Ų")
-
+    
             cosmo_volume_pattern = r"COSMO\s+VOLUME\s*=\s*([-+]?\d+\.\d+)\s*CUBIC\s+ANGSTROMS"
             cosmo_volume_match = re.search(cosmo_volume_pattern, content, re.IGNORECASE)
             if cosmo_volume_match:
                 properties['cosmo_volume'] = float(cosmo_volume_match.group(1))
                 print(f"   ✅ COSMO Volume: {properties['cosmo_volume']:.2f} ų")
-
-            # 6. Parse molecular weight - NEW
+    
+            # 6. Parse molecular weight
             mw_pattern = r"MOLECULAR\s+WEIGHT\s*=\s*([-+]?\d+\.\d+)"
             mw_match = re.search(mw_pattern, content, re.IGNORECASE)
             if mw_match:
                 properties['molecular_weight'] = float(mw_match.group(1))
                 print(f"   ✅ Molecular Weight: {properties['molecular_weight']:.2f} g/mol")
-
-            # 7. Parse point group - NEW
+    
+            # 7. Parse point group
             pg_pattern = r"POINT\s+GROUP:\s*([A-Za-z0-9]+)"
             pg_match = re.search(pg_pattern, content, re.IGNORECASE)
             if pg_match:
                 properties['point_group'] = pg_match.group(1)
                 print(f"   ✅ Point Group: {properties['point_group']}")
-
-            # 8. Parse number of filled levels - NEW
+    
+            # 8. Parse number of filled levels
             filled_levels_pattern = r"NO\.\s+OF\s+FILLED\s+LEVELS\s*=\s*(\d+)"
             filled_levels_match = re.search(filled_levels_pattern, content, re.IGNORECASE)
             if filled_levels_match:
                 properties['filled_levels'] = int(filled_levels_match.group(1))
                 print(f"   ✅ Filled Levels: {properties['filled_levels']}")
-
-            # 9. Calculate total energy if heat of formation is available
+    
+            # 9. Parse electron counts and spin properties for open shell systems
+            alpha_electrons_pattern = r"NO\.\s+OF\s+ALPHA\s+ELECTRONS\s*=\s*(\d+)"
+            beta_electrons_pattern = r"NO\.\s+OF\s+BETA\s+ELECTRONS\s*=\s*(\d+)"
+            
+            alpha_match = re.search(alpha_electrons_pattern, content)
+            beta_match = re.search(beta_electrons_pattern, content)
+            
+            if alpha_match and beta_match:
+                alpha_electrons = int(alpha_match.group(1))
+                beta_electrons = int(beta_match.group(1))
+                unpaired_electrons = abs(alpha_electrons - beta_electrons)
+                multiplicity = unpaired_electrons + 1
+                
+                properties['alpha_electrons'] = alpha_electrons
+                properties['beta_electrons'] = beta_electrons
+                properties['unpaired_electrons'] = unpaired_electrons
+                properties['multiplicity'] = multiplicity
+                
+                print(f"   ✅ Alpha electrons: {alpha_electrons}")
+                print(f"   ✅ Beta electrons: {beta_electrons}")
+                print(f"   ✅ Multiplicity: {multiplicity}")
+                if unpaired_electrons > 0:
+                    print(f"   ✅ Unpaired electrons: {unpaired_electrons}")
+    
+            # 10. Parse spin contamination (S**2)
+            spin_pattern = r"\(S\*\*2\)\s*=\s*([\d.]+)"
+            spin_match = re.search(spin_pattern, content)
+            if spin_match:
+                properties['s_squared'] = float(spin_match.group(1))
+                print(f"   ✅ S²: {properties['s_squared']:.3f}")
+    
+            # 11. Calculate total energy if heat of formation is available
             if 'heat_of_formation' in properties:
                 # Convert kcal/mol to eV (1 kcal/mol ≈ 0.043363 eV)
                 properties['total_energy_ev'] = properties['heat_of_formation'] * 0.043363
                 properties['total_energy_kcal_mol'] = properties['heat_of_formation']
                 print(f"   ✅ Total Energy: {properties['total_energy_kcal_mol']:.3f} kcal/mol")
                 print(f"   ✅ Total Energy: {properties['total_energy_ev']:.3f} eV")
-
-            # 10. Parse computation time - NEW
+    
+            # 12. Parse computation time
             comp_time_pattern = r"COMPUTATION\s+TIME\s*=\s*([\d.]+)\s*SECONDS"
             comp_time_match = re.search(comp_time_pattern, content, re.IGNORECASE)
             if comp_time_match:
                 properties['computation_time'] = float(comp_time_match.group(1))
                 print(f"   ✅ Computation Time: {properties['computation_time']:.3f} seconds")
-
+    
             # Summary
             found_properties = len([k for k, v in properties.items() if v is not None])
             print(f"   📊 Successfully parsed {found_properties} properties")
-
+    
         except Exception as e:
             print(f"❌ Error parsing MOPAC output: {e}")
             import traceback
             traceback.print_exc()
-
+    
         return properties
 
     def get_temp_files(self, label):
