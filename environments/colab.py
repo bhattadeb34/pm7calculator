@@ -1,9 +1,6 @@
 
 """
-Google Colab-optimized PM7Calculator implementation.
-
-This module provides specialized functionality for Google Colab environments,
-including automatic dependency installation and Jupyter-friendly output.
+Google Colab PM7Calculator implementation with working PM7 calculations.
 
 Author: bhattadeb34
 Institution: The Pennsylvania State University
@@ -12,308 +9,328 @@ Institution: The Pennsylvania State University
 import subprocess
 import sys
 import os
+import tempfile
+import uuid
+import re
 import logging
 from typing import Optional, Dict, List
-
-from ..core.calculator import PM7Calculator
-from ..core.utils import format_properties
-from ..config.defaults import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
 
-class ColabCalculator(PM7Calculator):
-    """
-    PM7Calculator optimized for Google Colab environment.
+class ColabCalculator:
+    """PM7Calculator optimized for Google Colab environment."""
     
-    This class provides Colab-specific features including:
-    - Automatic dependency installation (MOPAC, RDKit, etc.)
-    - Optimized temporary file handling
-    - Enhanced progress display for Jupyter notebooks
-    - Interactive property visualization
-    
-    Args:
-        auto_install: Whether to automatically install dependencies
-        method: Semi-empirical method (default: "PM7")
-        show_progress: Whether to show calculation progress
-        **kwargs: Additional arguments passed to PM7Calculator
-    
-    Example:
-        >>> # In Google Colab
-        >>> from pm7calculator.environments import ColabCalculator
-        >>> calc = ColabCalculator()  # Auto-installs dependencies
-        >>> props = calc.calculate("CCO", cleanup=False)
-        >>> calc.display_properties(props)
-    """
-    
-    def __init__(
-        self,
-        auto_install: bool = True,
-        method: str = "PM7",
-        show_progress: bool = True,
-        **kwargs
-    ):
-        # Set Colab-specific defaults
-        colab_config = DEFAULT_CONFIG["environments"]["colab"]
+    def __init__(self, method="PM7", auto_install=True):
+        self.method = method
+        self.temp_dir = "/tmp"
+        self.keywords = "PRECISE GNORM=0.001 SCFCRT=1.D-8"
         
-        kwargs.setdefault("temp_dir", colab_config["temp_dir"])
-        kwargs.setdefault("mopac_command", "mopac")
-        
-        self.show_progress = show_progress
-        
-        # Install dependencies if requested
         if auto_install:
-            self.install_dependencies()
-        
-        # Initialize parent calculator
-        super().__init__(method=method, **kwargs)
-        
-        logger.info("🚀 ColabCalculator initialized for Google Colab")
+            print("To install dependencies, run: ColabCalculator.install_dependencies()")
     
     @staticmethod
     def install_dependencies():
-        """
-        Install required packages in Google Colab environment.
-        
-        This method handles the installation of MOPAC, RDKit, and other
-        dependencies required for PM7 calculations in Colab.
-        """
-        print("🔧 Installing PM7Calculator dependencies in Google Colab...")
-        print("This may take a few minutes on first run...")
+        """Install required packages in Google Colab."""
+        print("Installing PM7Calculator dependencies in Google Colab...")
         
         try:
-            # Install condacolab for better package management
-            print("📦 Installing condacolab...")
-            subprocess.run([
-                sys.executable, "-m", "pip", "install", "-q", "condacolab"
-            ], check=True)
+            # Install condacolab
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "condacolab"], check=True)
             
             # Import and install conda
-            print("🐍 Setting up conda environment...")
             import condacolab
             condacolab.install()
             
-            # Install packages via conda-forge
-            packages = DEFAULT_CONFIG["environments"]["colab"]["conda_packages"]
+            # Install packages
+            packages = ["mopac", "rdkit", "ase", "pandas", "numpy<2.0", "matplotlib", "seaborn"]
             for package in packages:
-                print(f"📚 Installing {package}...")
-                subprocess.run([
-                    "conda", "install", "-c", "conda-forge", package, "-y"
-                ], check=True)
+                print(f"Installing {package}...")
+                subprocess.run(["conda", "install", "-c", "conda-forge", package, "-y"], check=True)
             
-            print("✅ Installation complete! PM7Calculator is ready to use.")
-            print("🔄 You may need to restart the runtime after first installation.")
+            print("Installation complete! Please restart the runtime.")
             
         except Exception as e:
-            print(f"❌ Installation failed: {e}")
-            print("💡 Try running this cell again or restart the runtime.")
+            print(f"Installation failed: {e}")
             raise
     
-    def calculate(self, smiles: str, cleanup: bool = True, **kwargs) -> Dict:
-        """
-        Calculate PM7 properties with Colab-specific enhancements.
-        
-        Args:
-            smiles: SMILES string
-            cleanup: Whether to remove temporary files
-            **kwargs: Additional arguments passed to parent calculate()
-            
-        Returns:
-            Dictionary containing calculation results and metadata
-        """
-        if self.show_progress:
-            print(f"🧬 Processing in Colab: {smiles}")
-        
-        # Run calculation using parent method
-        result = super().calculate(smiles, cleanup=cleanup, **kwargs)
-        
-        # Enhanced progress reporting for Colab
-        if self.show_progress:
-            if result.get('success'):
-                print("   🎯 Calculation completed successfully")
-                # Show key properties inline
-                if 'heat_of_formation' in result:
-                    print(f"   🔥 ΔHf: {result['heat_of_formation']:.3f} kcal/mol")
-                if 'dipole_moment' in result:
-                    print(f"   ⚡ μ: {result['dipole_moment']:.3f} Debye")
-            else:
-                print(f"   ❌ Calculation failed: {result.get('error')}")
-        
-        return result
+    def _check_mopac(self):
+        """Check if MOPAC is available."""
+        try:
+            subprocess.run(["mopac"], capture_output=True, text=True)
+            return True
+        except FileNotFoundError:
+            print("MOPAC not found. Run ColabCalculator.install_dependencies() first.")
+            return False
     
-    def calculate_batch(self, smiles_list: List[str], cleanup: bool = True, **kwargs) -> List[Dict]:
-        """
-        Batch calculation with Colab progress tracking.
-        
-        Args:
-            smiles_list: List of SMILES strings
-            cleanup: Whether to clean up temporary files
-            **kwargs: Additional arguments
+    def smiles_to_3d(self, smiles):
+        """Convert SMILES to 3D coordinates using RDKit."""
+        try:
+            from rdkit import Chem
+            from rdkit.Chem import AllChem
+            import numpy as np
             
-        Returns:
-            List of calculation results
-        """
-        total = len(smiles_list)
-        cleanup_msg = "with cleanup" if cleanup else "keeping files"
-        
-        if self.show_progress:
-            print(f"🚀 Processing {total} molecules in Colab {cleanup_msg}...")
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return None, None
             
-            # Try to use tqdm for progress bar if available
+            mol = Chem.AddHs(mol)
+            
+            params = AllChem.ETKDGv3()
+            params.randomSeed = 42
+            params.useSmallRingTorsions = True
+            
+            status = AllChem.EmbedMolecule(mol, params)
+            if status != 0:
+                return None, None
+            
             try:
-                from tqdm import tqdm
-                progress_bar = tqdm(total=total, desc="Calculating")
-                
-                def progress_callback(current, total):
-                    progress_bar.update(1)
-                
-                results = super().calculate_batch(
-                    smiles_list, cleanup=cleanup, 
-                    progress_callback=progress_callback, **kwargs
-                )
-                progress_bar.close()
-                
-            except ImportError:
-                # Fallback to simple progress reporting
-                results = super().calculate_batch(smiles_list, cleanup=cleanup, **kwargs)
-        else:
-            results = super().calculate_batch(smiles_list, cleanup=cleanup, **kwargs)
+                AllChem.MMFFOptimizeMolecule(mol, maxIters=1000)
+            except:
+                try:
+                    AllChem.UFFOptimizeMolecule(mol, maxIters=1000)
+                except:
+                    pass
+            
+            atoms = [atom.GetSymbol() for atom in mol.GetAtoms()]
+            conf = mol.GetConformer()
+            coords = np.array([list(conf.GetAtomPosition(i)) for i in range(mol.GetNumAtoms())])
+            
+            return atoms, coords
+            
+        except ImportError:
+            print("RDKit not available. Install dependencies first.")
+            return None, None
+        except Exception as e:
+            print(f"Failed to generate 3D structure for {smiles}: {e}")
+            return None, None
+    
+    def write_mopac_input(self, atoms, coordinates, label):
+        """Write MOPAC input file."""
+        input_file = os.path.join(self.temp_dir, f"{label}.mop")
         
-        # Summary for Colab
-        successful = sum(1 for r in results if r.get('success', False))
-        if self.show_progress:
-            print(f"📊 Batch Summary: {successful}/{total} successful calculations")
-            if not cleanup:
-                total_files = sum(len(r.get('temp_files', [])) for r in results if r.get('success'))
-                print(f"📁 Total files kept: {total_files}")
+        with open(input_file, 'w') as f:
+            f.write(f"{self.method} {self.keywords} CHARGE=0\\n")
+            f.write(f"PM7 calculation for {label}\\n")
+            f.write("\\n")
+            
+            for atom, coord in zip(atoms, coordinates):
+                f.write(f"{atom:2s} {coord[0]:12.6f} 1 {coord[1]:12.6f} 1 {coord[2]:12.6f} 1\\n")
+        
+        return input_file
+    
+    def run_mopac_calculation(self, input_file):
+        """Run MOPAC calculation."""
+        try:
+            result = subprocess.run(
+                ["mopac", input_file],
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+            
+            if result.returncode != 0:
+                print(f"MOPAC failed with return code {result.returncode}")
+                return False
+            
+            return True
+            
+        except subprocess.TimeoutExpired:
+            print("MOPAC calculation timed out")
+            return False
+        except Exception as e:
+            print(f"Error running MOPAC: {e}")
+            return False
+    
+    def parse_mopac_output(self, output_file):
+        """Parse MOPAC output file for properties."""
+        properties = {}
+        
+        try:
+            with open(output_file, 'r') as f:
+                content = f.read()
+            
+            # Parse heat of formation
+            hof_pattern = r"FINAL\\s+HEAT\\s+OF\\s+FORMATION\\s*=\\s*([-+]?\\d+\\.\\d+)\\s*KCAL/MOL"
+            hof_match = re.search(hof_pattern, content, re.IGNORECASE)
+            if hof_match:
+                properties['heat_of_formation'] = float(hof_match.group(1))
+            
+            # Parse dipole moment
+            dipole_pattern = r"SUM\\s+([-+]?\\d+\\.\\d+)\\s+([-+]?\\d+\\.\\d+)\\s+([-+]?\\d+\\.\\d+)\\s+([-+]?\\d+\\.\\d+)"
+            dipole_match = re.search(dipole_pattern, content)
+            if dipole_match:
+                properties['dipole_moment'] = float(dipole_match.group(4))
+                properties['dipole_x'] = float(dipole_match.group(1))
+                properties['dipole_y'] = float(dipole_match.group(2))
+                properties['dipole_z'] = float(dipole_match.group(3))
+            
+            # Parse HOMO/LUMO
+            homo_lumo_pattern = r"HOMO\\s+LUMO\\s+ENERGIES\\s*\\(EV\\)\\s*=\\s*([-+]?\\d+\\.\\d+)\\s+([-+]?\\d+\\.\\d+)"
+            homo_lumo_match = re.search(homo_lumo_pattern, content)
+            if homo_lumo_match:
+                properties['homo_ev'] = float(homo_lumo_match.group(1))
+                properties['lumo_ev'] = float(homo_lumo_match.group(2))
+                properties['gap_ev'] = properties['lumo_ev'] - properties['homo_ev']
+            
+            # Parse ionization potential
+            ip_pattern = r"IONIZATION\\s+POTENTIAL\\s*=\\s*([-+]?\\d+\\.\\d+)\\s*EV"
+            ip_match = re.search(ip_pattern, content, re.IGNORECASE)
+            if ip_match:
+                properties['ionization_potential'] = float(ip_match.group(1))
+            
+            # Parse molecular weight
+            mw_pattern = r"MOLECULAR\\s+WEIGHT\\s*=\\s*([-+]?\\d+\\.\\d+)"
+            mw_match = re.search(mw_pattern, content, re.IGNORECASE)
+            if mw_match:
+                properties['molecular_weight'] = float(mw_match.group(1))
+            
+            # Parse computation time
+            comp_time_pattern = r"COMPUTATION\\s+TIME\\s*=\\s*([\\d.]+)\\s*SECONDS"
+            comp_time_match = re.search(comp_time_pattern, content, re.IGNORECASE)
+            if comp_time_match:
+                properties['computation_time'] = float(comp_time_match.group(1))
+            
+        except Exception as e:
+            print(f"Error parsing MOPAC output: {e}")
+        
+        return properties
+    
+    def get_temp_files(self, label):
+        """Get list of temporary files."""
+        extensions = ['.mop', '.out', '.arc', '.aux', '.log', '.end']
+        temp_files = []
+        for ext in extensions:
+            temp_file = os.path.join(self.temp_dir, f"{label}{ext}")
+            if os.path.exists(temp_file):
+                temp_files.append(temp_file)
+        return temp_files
+    
+    def cleanup_files(self, label):
+        """Clean up temporary files."""
+        temp_files = self.get_temp_files(label)
+        for temp_file in temp_files:
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+        return temp_files
+    
+    def calculate_properties(self, smiles, cleanup=True):
+        """Calculate PM7 properties for a SMILES string."""
+        if not self._check_mopac():
+            return {'success': False, 'error': 'MOPAC not available', 'smiles': smiles}
+        
+        label = f"mol_{uuid.uuid4().hex[:8]}"
+        
+        try:
+            print(f"Processing: {smiles}")
+            
+            # Generate 3D structure
+            atoms, coords = self.smiles_to_3d(smiles)
+            if atoms is None:
+                return {'success': False, 'error': 'Failed to generate 3D structure', 'smiles': smiles}
+            
+            print(f"Generated 3D structure ({len(atoms)} atoms)")
+            
+            # Write MOPAC input
+            input_file = self.write_mopac_input(atoms, coords, label)
+            
+            # Run calculation
+            success = self.run_mopac_calculation(input_file)
+            if not success:
+                return {'success': False, 'error': 'MOPAC calculation failed', 'smiles': smiles}
+            
+            # Parse output
+            output_file = os.path.join(self.temp_dir, f"{label}.out")
+            properties = self.parse_mopac_output(output_file)
+            
+            if not properties:
+                return {'success': False, 'error': 'Failed to parse properties', 'smiles': smiles}
+            
+            # Add metadata
+            properties['success'] = True
+            properties['smiles'] = smiles
+            properties['num_atoms'] = len(atoms)
+            properties['label'] = label
+            
+            # Handle files
+            temp_files = self.get_temp_files(label)
+            properties['temp_files'] = temp_files
+            properties['files_kept'] = not cleanup
+            
+            if cleanup:
+                self.cleanup_files(label)
+            else:
+                print(f"Keeping {len(temp_files)} temporary files")
+            
+            print("Properties calculated successfully")
+            return properties
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e), 'smiles': smiles}
+        
+        finally:
+            if cleanup:
+                self.cleanup_files(label)
+    
+    def calculate_batch(self, smiles_list, cleanup=True, max_molecules=None):
+        """Calculate properties for multiple SMILES."""
+        if max_molecules:
+            smiles_list = smiles_list[:max_molecules]
+        
+        results = []
+        total = len(smiles_list)
+        
+        print(f"Processing {total} molecules...")
+        
+        for i, smiles in enumerate(smiles_list):
+            print(f"Molecule {i+1}/{total}")
+            result = self.calculate_properties(smiles, cleanup=cleanup)
+            results.append(result)
+        
+        successful = sum(1 for r in results if r['success'])
+        print(f"Summary: {successful}/{len(results)} successful calculations")
         
         return results
     
-    def display_properties(self, props: Dict, style: str = "colab"):
-        """
-        Display properties with Colab-friendly formatting.
+    def display_properties(self, props):
+        """Display properties with formatting."""
+        if not props.get('success', False):
+            print(f"Calculation failed: {props.get('error', 'Unknown error')}")
+            return
         
-        Args:
-            props: Properties dictionary from calculation
-            style: Display style ("colab", "detailed", "compact")
-        """
-        formatted_output = format_properties(props, style=style)
-        print(formatted_output)
+        print(f"PM7 Properties for {props.get('smiles', 'Unknown')}:")
+        print("=" * 50)
         
-        # Additional Colab-specific display features
-        if props.get('success') and props.get('temp_files'):
-            print(f"\n📁 Temporary files:")
-            for file_path in props['temp_files']:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-                print(f"   - {os.path.basename(file_path)} ({file_size:,} bytes)")
-    
-    def create_summary_dataframe(self, results: List[Dict]):
-        """
-        Create a pandas DataFrame summary for Colab display.
+        if 'heat_of_formation' in props:
+            print(f"Heat of Formation: {props['heat_of_formation']:.3f} kcal/mol")
         
-        Args:
-            results: List of calculation results
-            
-        Returns:
-            pandas DataFrame with key properties
-        """
-        try:
-            import pandas as pd
-        except ImportError:
-            print("❌ pandas not available for DataFrame creation")
-            return None
+        if 'dipole_moment' in props:
+            print(f"Dipole Moment: {props['dipole_moment']:.3f} Debye")
         
-        # Extract key properties for summary
-        summary_data = []
-        for result in results:
-            if result.get('success'):
-                row = {
-                    'SMILES': result.get('smiles', ''),
-                    'Heat_of_Formation': result.get('heat_of_formation'),
-                    'Dipole_Moment': result.get('dipole_moment'),
-                    'HOMO_eV': result.get('homo_ev'),
-                    'LUMO_eV': result.get('lumo_ev'),
-                    'Gap_eV': result.get('gap_ev'),
-                    'Mol_Weight': result.get('molecular_weight'),
-                    'Comp_Time': result.get('computation_time'),
-                }
-                summary_data.append(row)
+        if 'homo_ev' in props and 'lumo_ev' in props:
+            print(f"HOMO Energy: {props['homo_ev']:.3f} eV")
+            print(f"LUMO Energy: {props['lumo_ev']:.3f} eV")
+            print(f"HOMO-LUMO Gap: {props['gap_ev']:.3f} eV")
         
-        df = pd.DataFrame(summary_data)
-        print(f"📊 Summary DataFrame created with {len(df)} successful calculations")
-        return df
+        if 'molecular_weight' in props:
+            print(f"Molecular Weight: {props['molecular_weight']:.2f} g/mol")
+        
+        if 'computation_time' in props:
+            print(f"Computation Time: {props['computation_time']:.3f} seconds")
+        
+        print(f"Number of Atoms: {props.get('num_atoms', 'N/A')}")
 
 
-# Convenience functions for backward compatibility
-def calculate_pm7_properties_colab(smiles: str, method: str = "PM7", cleanup: bool = True):
-    """
-    One-line function for Colab PM7 calculations.
-    
-    Args:
-        smiles: SMILES string
-        method: Semi-empirical method
-        cleanup: Whether to remove temporary files
-        
-    Returns:
-        Properties dictionary
-        
-    Example:
-        >>> props = calculate_pm7_properties_colab("CCO")
-        >>> print(f"Heat of formation: {props['heat_of_formation']:.3f} kcal/mol")
-    """
-    calc = ColabCalculator(method=method)
-    return calc.calculate(smiles, cleanup=cleanup)
+# Convenience functions
+def calculate_pm7_properties_colab(smiles, method="PM7", cleanup=True):
+    """One-line function for PM7 calculations."""
+    calc = ColabCalculator(method=method, auto_install=False)
+    return calc.calculate_properties(smiles, cleanup=cleanup)
 
 
-def calculate_pm7_batch_colab(
-    smiles_list: List[str], 
-    method: str = "PM7", 
-    cleanup: bool = True, 
-    max_molecules: Optional[int] = None,
-    **kwargs
-):
-    """
-    Batch calculation function for Colab.
-    
-    Args:
-        smiles_list: List of SMILES strings
-        method: Semi-empirical method
-        cleanup: Whether to remove temporary files
-        max_molecules: Maximum number to process
-        **kwargs: Additional arguments
-        
-    Returns:
-        List of calculation results
-        
-    Example:
-        >>> results = calculate_pm7_batch_colab(['CCO', 'CC(=O)O'], cleanup=False)
-        >>> successful = [r for r in results if r['success']]
-    """
-    calc = ColabCalculator(method=method)
-    
-    if max_molecules:
-        smiles_list = smiles_list[:max_molecules]
-    
-    return calc.calculate_batch(smiles_list, cleanup=cleanup, **kwargs)
-
-
-def calculate_pm7_dataframe_colab(df, smiles_column: str = 'smiles', method: str = "PM7", cleanup: bool = True):
-    """
-    Calculate PM7 properties for SMILES in a pandas DataFrame (Colab version).
-    
-    Args:
-        df: pandas DataFrame
-        smiles_column: Name of column containing SMILES
-        method: Semi-empirical method
-        cleanup: Whether to remove temporary files
-        
-    Returns:
-        pandas DataFrame with added PM7 properties
-        
-    Example:
-        >>> import pandas as pd
-        >>> df = pd.DataFrame({'smiles': ['CCO', 'CC(=O)O']})
-        >>> result_df = calculate_pm7_dataframe_colab(df, cleanup=False)
-    """
-    calc = ColabCalculator(method=method)
-    return calc.calculate_dataframe(df, smiles_column=smiles_column, cleanup=cleanup)
+def calculate_pm7_batch_colab(smiles_list, method="PM7", cleanup=True, max_molecules=None):
+    """Batch calculation function."""
+    calc = ColabCalculator(method=method, auto_install=False)
+    return calc.calculate_batch(smiles_list, cleanup=cleanup, max_molecules=max_molecules)

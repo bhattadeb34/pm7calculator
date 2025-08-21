@@ -1,9 +1,0 @@
-cat > requirements.txt << 'EOF'
-# Core scientific computing
-numpy>=1.19.0
-pandas>=1.3.0
-
-# Chemistry and molecular handling
-rdkit-pypi>=2021.9.1
-ase>=3.20.0
-EOF

@@ -7,7 +7,7 @@ configurations for PM7 calculations.
 """
 
 from .defaults import DEFAULT_CONFIG, PROPERTY_FORMATS
-from .validators import validate_config, ConfigValidator
+
 
 __all__ = [
     "DEFAULT_CONFIG",

@@ -1,11 +1,12 @@
+cat > setup.py << 'EOF'
 from setuptools import setup, find_packages
 
 setup(
     name="pm7calculator",
-    version="1.0.0",
+    version="1.0.1",
     author="bhattadeb34",
     author_email="bhattadeb34@psu.edu",
-    description="Comprehensive PM7 quantum chemistry calculator for molecular property prediction",
+    description="PM7 quantum chemistry calculator for Google Colab",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/bhattadeb34/pm7calculator",
@@ -16,26 +17,11 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Chemistry",
     ],
     python_requires=">=3.7",
-    install_requires=[
-        "numpy>=1.19.0",
-        "pandas>=1.3.0",
-        "rdkit-pypi>=2021.9.1",
-        "ase>=3.20.0",
-    ],
-    extras_require={
-        "colab": ["condacolab"],
-        "visualization": ["matplotlib>=3.3.0", "seaborn>=0.11.0", "plotly>=5.0.0"],
-        "dev": ["pytest>=6.0", "black", "flake8", "mypy"],
-        "all": ["condacolab", "matplotlib>=3.3.0", "seaborn>=0.11.0", "plotly>=5.0.0"],
-    },
+    install_requires=[],
     include_package_data=True,
     zip_safe=False,
 )
+EOF
