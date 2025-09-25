@@ -1,4 +1,4 @@
-# PM7Calculator 🧪
+# PM7Calculator 
 
 [![PyPI Version](https://img.shields.io/pypi/v/pm7calculator.svg)](https://pypi.org/project/pm7calculator/)
 [![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
@@ -10,21 +10,21 @@
 
 ---
 
-## 🌟 Features
+## Features
 
-### 🔬 **Comprehensive Molecular Properties**
+###  **Comprehensive Molecular Properties**
 Calculate essential molecular properties including:
 - **Thermodynamic Properties**: Heat of formation, total energy  
 - **Electronic Properties**: HOMO/LUMO energies, ionization potential, electron affinity  
 - **Structural Properties**: Dipole moment, molecular geometry, point group  
 - **Surface Properties**: COSMO area and volume for solvation studies  
 
-### 🚀 **Multi-Environment Support**
-- **🔥 Google Colab**: Auto-installation and optimized workflows  
-- **💻 Local Machines**: Full-featured calculations with file management  
-- **🖥️ Computing Clusters**: Scalable batch processing capabilities  
+###  **Multi-Environment Support**
+- ** Google Colab**: Auto-installation and optimized workflows  
+- ** Local Machines**: Full-featured calculations with file management  
+- ** Computing Clusters**: Scalable batch processing capabilities  
 
-### 📊 **Advanced Capabilities**
+###  **Advanced Capabilities**
 - **Batch Processing**: Efficiently process thousands of molecules  
 - **Smart File Management**: Automatic cleanup with debugging options  
 - **Flexible Input**: SMILES strings, SDF files, or coordinate files  
@@ -32,14 +32,14 @@ Calculate essential molecular properties including:
 
 ---
 
-## 🎥 Demo (Example GIF)
+##  Demo (Example GIF)
 
 ![Usage Demo](https://raw.githubusercontent.com/bhattadeb34/pm7calculator/main/docs/demo.gif)  
 *Example workflow of calculating properties in Google Colab*  
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### **Installation**
 
@@ -113,7 +113,7 @@ print(df[['smiles', 'heat_of_formation', 'dipole_moment', 'gap_ev']])
 
 ---
 
-## ⚙️ Requirements
+##  Requirements
 
 * **Python**: 3.7 or higher
 * **MOPAC**: Quantum chemistry software (auto-installed in Colab)
@@ -122,7 +122,7 @@ print(df[['smiles', 'heat_of_formation', 'dipole_moment', 'gap_ev']])
 
 ---
 
-## 🧑‍🔬 Technical Details
+##  Technical Details
 
 * **Method**: PM7 semi-empirical quantum mechanics
 * **3D Structure**: Generated using RDKit with MMFF/UFF force fields
@@ -132,13 +132,13 @@ print(df[['smiles', 'heat_of_formation', 'dipole_moment', 'gap_ev']])
 
 ---
 
-## 📜 License
+##  License
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ---
 
-## 📖 Citation
+##  Citation
 
 ```bibtex
 @software{pm7calculator2025,
@@ -153,5 +153,5 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 ---
 
-⭐ **Star this repository if you find it useful!**
+ **Star this repository if you find it useful!**
 
