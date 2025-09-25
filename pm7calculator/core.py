@@ -212,7 +212,7 @@ class ColabPM7Calculator:
             ip_match = re.search(ip_pattern, content, re.IGNORECASE)
             if ip_match:
                 properties['ionization_potential'] = float(ip_match.group(1))
-                print(f"   ✅ Ionization Potential: {properties['ionization_potential']:.3f} eV")
+                print(f"    Ionization Potential: {properties['ionization_potential']:.3f} eV")
             else:
                 print("    Ionization Potential: Not found")
     
@@ -479,7 +479,7 @@ def calculate_pm7_batch_colab(smiles_list, method="PM7", max_molecules=None, cle
 
     print(f"\n Summary: {successful}/{len(results)} successful calculations")
     if not cleanup and total_files > 0:
-        print(f"📁 Total temporary files kept: {total_files}")
+        print(f" Total temporary files kept: {total_files}")
 
     return results
 
