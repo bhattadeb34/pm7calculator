@@ -6,25 +6,25 @@
 [![GitHub Issues](https://img.shields.io/github/issues/bhattadeb34/pm7calculator.svg)](https://github.com/bhattadeb34/pm7calculator/issues)
 [![Downloads](https://pepy.tech/badge/pm7calculator)](https://pepy.tech/project/pm7calculator)
 
-**A comprehensive and user-friendly Python package for PM7 semi-empirical quantum chemistry calculations, designed for researchers, educators, and students in computational chemistry, drug discovery, and materials science.**
+**A wrapper around MOPAC and a user-friendly Python package for PM7 semi-empirical quantum chemistry calculations, designed for researchers, educators, and students in computational chemistry, drug discovery, and materials science.**
 
 ---
 
 ## Features
 
-###  **Comprehensive Molecular Properties**
+###  Molecular Properties Calculations
 Calculate essential molecular properties including:
 - **Thermodynamic Properties**: Heat of formation, total energy  
 - **Electronic Properties**: HOMO/LUMO energies, ionization potential, electron affinity  
 - **Structural Properties**: Dipole moment, molecular geometry, point group  
 - **Surface Properties**: COSMO area and volume for solvation studies  
 
-###  **Multi-Environment Support**
+###  Multi-Environment Support
 - ** Google Colab**: Auto-installation and optimized workflows  
 - ** Local Machines**: Full-featured calculations with file management  
 - ** Computing Clusters**: Scalable batch processing capabilities  
 
-###  **Advanced Capabilities**
+###  Advanced Capabilities
 - **Batch Processing**: Efficiently process thousands of molecules  
 - **Smart File Management**: Automatic cleanup with debugging options  
 - **Flexible Input**: SMILES strings, SDF files, or coordinate files  
@@ -41,7 +41,7 @@ Calculate essential molecular properties including:
 
 ## Quick Start
 
-### **Installation**
+### Installation
 
 ```bash
 # From PyPI (recommended)
@@ -60,7 +60,7 @@ pip install "pm7calculator[visualization]"
 pip install "pm7calculator[all]"
 ````
 
-### **Basic Usage**
+### Basic Usage
 
 ```python
 from pm7calculator import PM7Calculator
@@ -78,7 +78,7 @@ print(f"HOMO Energy: {props['homo_ev']:.2f} eV")
 print(f"LUMO Energy: {props['lumo_ev']:.2f} eV")
 ```
 
-### **Google Colab Usage**
+### Google Colab Usage
 
 ```python
 # In Google Colab - automatic dependency installation
@@ -94,7 +94,7 @@ props = calc.calculate("CCO", cleanup=False)
 calc.display_properties(props)
 ```
 
-### **Batch Processing**
+### Batch Processing
 
 ```python
 # Process multiple molecules efficiently
