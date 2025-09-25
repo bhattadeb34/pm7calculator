@@ -142,7 +142,7 @@ class ColabPM7Calculator:
                 content = f.read()
                 lines = content.split('\n')
     
-            print(f"🔍 Parsing MOPAC output: {output_file}")
+            print(f" Parsing MOPAC output: {output_file}")
     
             # 1. Parse heat of formation
             hof_pattern = r"FINAL\s+HEAT\s+OF\s+FORMATION\s*=\s*([-+]?\d+\.\d+)\s*KCAL/MOL"
