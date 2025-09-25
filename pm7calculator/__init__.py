@@ -1,9 +1,3 @@
-"""
-PM7Calculator - Simple and Working
-Preserves your original working Colab code functionality
-"""
-
-# Import your working functions exactly as they were
 from .core import (
     calculate_pm7_properties_colab,
     calculate_pm7_batch_colab,
@@ -18,7 +12,6 @@ from .utils import install_colab_dependencies, check_colab_environment
 __version__ = "0.1.0"
 __author__ = "bhattadeb34"
 
-# Make the simple functions available at package level
 __all__ = [
     'calculate_pm7_properties_colab',
     'calculate_pm7_batch_colab',
@@ -29,7 +22,7 @@ __all__ = [
     'check_colab_environment'
 ]
 
-# Auto-check environment and provide helpful message
+
 import sys
 
 def _startup_message():
