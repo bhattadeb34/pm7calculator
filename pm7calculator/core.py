@@ -18,7 +18,7 @@ class ColabPM7Calculator:
 
     def __init__(self, method="PM7"):
         """
-        Initialize calculator for Colab.
+        Initialize the calculator for Colab.
 
         Args:
             method: Semi-empirical method (PM7, PM6, etc.)
