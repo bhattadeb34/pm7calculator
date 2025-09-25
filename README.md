@@ -20,9 +20,9 @@ Calculate essential molecular properties including:
 - **Surface Properties**: COSMO area and volume for solvation studies  
 
 ###  Multi-Environment Support
-- ** Google Colab**: Auto-installation and optimized workflows  
-- ** Local Machines**: Full-featured calculations with file management  
-- ** Computing Clusters**: Scalable batch processing capabilities  
+- ** Google Colab: Auto-installation and optimized workflows  
+- ** Local Machines: Full-featured calculations with file management  
+- ** Computing Clusters: Scalable batch processing capabilities  
 
 ###  Advanced Capabilities
 - **Batch Processing**: Efficiently process thousands of molecules  
