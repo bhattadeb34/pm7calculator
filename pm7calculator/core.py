@@ -36,10 +36,10 @@ class ColabPM7Calculator:
         """Check if MOPAC is properly installed."""
         try:
             result = subprocess.run(["mopac"], capture_output=True, text=True)
-            print("✅ MOPAC is available")
+            print(" MOPAC is available")
             return True
         except FileNotFoundError:
-            print("❌ MOPAC not found. Please install using the installation cell above.")
+            print(" MOPAC not found. Please install using the installation cell above.")
             return False
 
     def smiles_to_3d(self, smiles):
@@ -87,7 +87,7 @@ class ColabPM7Calculator:
             return atoms, coords
 
         except Exception as e:
-            print(f"❌ Failed to generate 3D structure for {smiles}: {e}")
+            print(f" Failed to generate 3D structure for {smiles}: {e}")
             return None, None
 
     def write_mopac_input(self, atoms, coordinates, label):
@@ -149,9 +149,9 @@ class ColabPM7Calculator:
             hof_match = re.search(hof_pattern, content, re.IGNORECASE)
             if hof_match:
                 properties['heat_of_formation'] = float(hof_match.group(1))
-                print(f"   ✅ Heat of Formation: {properties['heat_of_formation']:.3f} kcal/mol")
+                print(f"    Heat of Formation: {properties['heat_of_formation']:.3f} kcal/mol")
             else:
-                print("   ❌ Heat of Formation: Not found")
+                print("    Heat of Formation: Not found")
     
             # 2. Parse dipole moment
             dipole_pattern = r"SUM\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
@@ -161,9 +161,9 @@ class ColabPM7Calculator:
                 properties['dipole_x'] = float(dipole_match.group(1))
                 properties['dipole_y'] = float(dipole_match.group(2))
                 properties['dipole_z'] = float(dipole_match.group(3))
-                print(f"   ✅ Dipole Moment: {properties['dipole_moment']:.3f} Debye")
+                print(f"    Dipole Moment: {properties['dipole_moment']:.3f} Debye")
             else:
-                print("   ❌ Dipole Moment: Not found")
+                print("    Dipole Moment: Not found")
     
             # 3. Parse HOMO/LUMO energies - Handle both closed and open shell systems
             homo_lumo_pattern = r"HOMO\s+LUMO\s+ENERGIES\s*\(EV\)\s*=\s*([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
@@ -175,9 +175,9 @@ class ColabPM7Calculator:
                 properties['lumo_ev'] = float(homo_lumo_match.group(2))
                 properties['gap_ev'] = properties['lumo_ev'] - properties['homo_ev']
                 properties['spin_state'] = 'closed_shell'
-                print(f"   ✅ HOMO: {properties['homo_ev']:.3f} eV")
-                print(f"   ✅ LUMO: {properties['lumo_ev']:.3f} eV")
-                print(f"   ✅ HOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
+                print(f"    HOMO: {properties['homo_ev']:.3f} eV")
+                print(f"    LUMO: {properties['lumo_ev']:.3f} eV")
+                print(f"    HOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
             else:
                 # Try SOMO/LUMO pattern (open shell)
                 alpha_somo_pattern = r"ALPHA\s+SOMO\s+LUMO\s*\(EV\)\s*=\s*([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)"
@@ -199,13 +199,13 @@ class ColabPM7Calculator:
                     properties['gap_ev'] = properties['lumo_ev'] - properties['homo_ev']
                     properties['spin_state'] = 'open_shell'
                     
-                    print(f"   ✅ Alpha SOMO: {properties['alpha_somo_ev']:.3f} eV")
-                    print(f"   ✅ Beta SOMO: {properties['beta_somo_ev']:.3f} eV")
-                    print(f"   ✅ Effective HOMO: {properties['homo_ev']:.3f} eV")
-                    print(f"   ✅ Effective LUMO: {properties['lumo_ev']:.3f} eV")
-                    print(f"   ✅ SOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
+                    print(f"    Alpha SOMO: {properties['alpha_somo_ev']:.3f} eV")
+                    print(f"    Beta SOMO: {properties['beta_somo_ev']:.3f} eV")
+                    print(f"    Effective HOMO: {properties['homo_ev']:.3f} eV")
+                    print(f"    Effective LUMO: {properties['lumo_ev']:.3f} eV")
+                    print(f"    SOMO-LUMO Gap: {properties['gap_ev']:.3f} eV")
                 else:
-                    print("   ❌ HOMO/LUMO/SOMO energies: Not found")
+                    print("    HOMO/LUMO/SOMO energies: Not found")
     
             # 4. Parse ionization potential
             ip_pattern = r"IONIZATION\s+POTENTIAL\s*=\s*([-+]?\d+\.\d+)\s*EV"
@@ -214,41 +214,41 @@ class ColabPM7Calculator:
                 properties['ionization_potential'] = float(ip_match.group(1))
                 print(f"   ✅ Ionization Potential: {properties['ionization_potential']:.3f} eV")
             else:
-                print("   ❌ Ionization Potential: Not found")
+                print("    Ionization Potential: Not found")
     
             # 5. Parse COSMO area and volume
             cosmo_area_pattern = r"COSMO\s+AREA\s*=\s*([-+]?\d+\.\d+)\s*SQUARE\s+ANGSTROMS"
             cosmo_area_match = re.search(cosmo_area_pattern, content, re.IGNORECASE)
             if cosmo_area_match:
                 properties['cosmo_area'] = float(cosmo_area_match.group(1))
-                print(f"   ✅ COSMO Area: {properties['cosmo_area']:.2f} Ų")
+                print(f"    COSMO Area: {properties['cosmo_area']:.2f} Ų")
     
             cosmo_volume_pattern = r"COSMO\s+VOLUME\s*=\s*([-+]?\d+\.\d+)\s*CUBIC\s+ANGSTROMS"
             cosmo_volume_match = re.search(cosmo_volume_pattern, content, re.IGNORECASE)
             if cosmo_volume_match:
                 properties['cosmo_volume'] = float(cosmo_volume_match.group(1))
-                print(f"   ✅ COSMO Volume: {properties['cosmo_volume']:.2f} ų")
+                print(f"    COSMO Volume: {properties['cosmo_volume']:.2f} ų")
     
             # 6. Parse molecular weight
             mw_pattern = r"MOLECULAR\s+WEIGHT\s*=\s*([-+]?\d+\.\d+)"
             mw_match = re.search(mw_pattern, content, re.IGNORECASE)
             if mw_match:
                 properties['molecular_weight'] = float(mw_match.group(1))
-                print(f"   ✅ Molecular Weight: {properties['molecular_weight']:.2f} g/mol")
+                print(f"    Molecular Weight: {properties['molecular_weight']:.2f} g/mol")
     
             # 7. Parse point group
             pg_pattern = r"POINT\s+GROUP:\s*([A-Za-z0-9]+)"
             pg_match = re.search(pg_pattern, content, re.IGNORECASE)
             if pg_match:
                 properties['point_group'] = pg_match.group(1)
-                print(f"   ✅ Point Group: {properties['point_group']}")
+                print(f"    Point Group: {properties['point_group']}")
     
             # 8. Parse number of filled levels
             filled_levels_pattern = r"NO\.\s+OF\s+FILLED\s+LEVELS\s*=\s*(\d+)"
             filled_levels_match = re.search(filled_levels_pattern, content, re.IGNORECASE)
             if filled_levels_match:
                 properties['filled_levels'] = int(filled_levels_match.group(1))
-                print(f"   ✅ Filled Levels: {properties['filled_levels']}")
+                print(f"    Filled Levels: {properties['filled_levels']}")
     
             # 9. Parse electron counts and spin properties for open shell systems
             alpha_electrons_pattern = r"NO\.\s+OF\s+ALPHA\s+ELECTRONS\s*=\s*(\d+)"
@@ -268,40 +268,40 @@ class ColabPM7Calculator:
                 properties['unpaired_electrons'] = unpaired_electrons
                 properties['multiplicity'] = multiplicity
                 
-                print(f"   ✅ Alpha electrons: {alpha_electrons}")
-                print(f"   ✅ Beta electrons: {beta_electrons}")
-                print(f"   ✅ Multiplicity: {multiplicity}")
+                print(f"    Alpha electrons: {alpha_electrons}")
+                print(f"    Beta electrons: {beta_electrons}")
+                print(f"    Multiplicity: {multiplicity}")
                 if unpaired_electrons > 0:
-                    print(f"   ✅ Unpaired electrons: {unpaired_electrons}")
+                    print(f"    Unpaired electrons: {unpaired_electrons}")
     
             # 10. Parse spin contamination (S**2)
             spin_pattern = r"\(S\*\*2\)\s*=\s*([\d.]+)"
             spin_match = re.search(spin_pattern, content)
             if spin_match:
                 properties['s_squared'] = float(spin_match.group(1))
-                print(f"   ✅ S²: {properties['s_squared']:.3f}")
+                print(f"    S²: {properties['s_squared']:.3f}")
     
             # 11. Calculate total energy if heat of formation is available
             if 'heat_of_formation' in properties:
                 # Convert kcal/mol to eV (1 kcal/mol ≈ 0.043363 eV)
                 properties['total_energy_ev'] = properties['heat_of_formation'] * 0.043363
                 properties['total_energy_kcal_mol'] = properties['heat_of_formation']
-                print(f"   ✅ Total Energy: {properties['total_energy_kcal_mol']:.3f} kcal/mol")
-                print(f"   ✅ Total Energy: {properties['total_energy_ev']:.3f} eV")
+                print(f"    Total Energy: {properties['total_energy_kcal_mol']:.3f} kcal/mol")
+                print(f"    Total Energy: {properties['total_energy_ev']:.3f} eV")
     
             # 12. Parse computation time
             comp_time_pattern = r"COMPUTATION\s+TIME\s*=\s*([\d.]+)\s*SECONDS"
             comp_time_match = re.search(comp_time_pattern, content, re.IGNORECASE)
             if comp_time_match:
                 properties['computation_time'] = float(comp_time_match.group(1))
-                print(f"   ✅ Computation Time: {properties['computation_time']:.3f} seconds")
+                print(f"    Computation Time: {properties['computation_time']:.3f} seconds")
     
             # Summary
             found_properties = len([k for k, v in properties.items() if v is not None])
-            print(f"   📊 Successfully parsed {found_properties} properties")
+            print(f"    Successfully parsed {found_properties} properties")
     
         except Exception as e:
-            print(f"❌ Error parsing MOPAC output: {e}")
+            print(f" Error parsing MOPAC output: {e}")
             import traceback
             traceback.print_exc()
     
@@ -331,7 +331,7 @@ class ColabPM7Calculator:
                 print(f"Warning: Could not remove {temp_file}: {e}")
 
         if cleaned_files:
-            print(f"   🗑️  Cleaned up {len(cleaned_files)} temporary files")
+            print(f"     Cleaned up {len(cleaned_files)} temporary files")
 
         return cleaned_files
 
@@ -349,18 +349,18 @@ class ColabPM7Calculator:
         label = f"mol_{uuid.uuid4().hex[:8]}"
 
         try:
-            print(f"🧬 Processing: {smiles}")
+            print(f" Processing: {smiles}")
 
             # Generate 3D structure
             atoms, coords = self.smiles_to_3d(smiles)
             if atoms is None:
                 return {'success': False, 'error': 'Failed to generate 3D structure', 'smiles': smiles}
 
-            print(f"   ✅ Generated 3D structure ({len(atoms)} atoms)")
+            print(f"    Generated 3D structure ({len(atoms)} atoms)")
 
             # Write MOPAC input
             input_file = self.write_mopac_input(atoms, coords, label)
-            print(f"   📝 Created input file: {input_file}")
+            print(f"    Created input file: {input_file}")
 
             # Run MOPAC calculation
             success = self.run_mopac_calculation(input_file)
@@ -391,11 +391,11 @@ class ColabPM7Calculator:
                 cleaned_files = self.cleanup_files(label)
                 properties['cleaned_files'] = cleaned_files
             else:
-                print(f"   📁 Keeping {len(temp_files)} temporary files:")
+                print(f"    Keeping {len(temp_files)} temporary files:")
                 for temp_file in temp_files:
                     print(f"      - {temp_file}")
 
-            print(f"   🎯 Properties calculated successfully")
+            print(f"    Properties calculated successfully")
             return properties
 
         except Exception as e:
@@ -456,10 +456,10 @@ def calculate_pm7_batch_colab(smiles_list, method="PM7", max_molecules=None, cle
         smiles_list = smiles_list[:max_molecules]
 
     cleanup_msg = "with file cleanup" if cleanup else "keeping temporary files"
-    print(f"🚀 Processing {len(smiles_list)} molecules {cleanup_msg}...")
+    print(f" Processing {len(smiles_list)} molecules {cleanup_msg}...")
 
     for i, smiles in enumerate(smiles_list):
-        print(f"\n📊 Molecule {i+1}/{len(smiles_list)}")
+        print(f"\n Molecule {i+1}/{len(smiles_list)}")
 
         props = calculator.calculate_properties(smiles, cleanup=cleanup)
         results.append(props)
@@ -469,15 +469,15 @@ def calculate_pm7_batch_colab(smiles_list, method="PM7", max_molecules=None, cle
             hof = props.get('heat_of_formation', 'N/A')
             dipole = props.get('dipole_moment', 'N/A')
             homo = props.get('homo_ev', 'N/A')
-            print(f"   🎯 HOF: {hof}, Dipole: {dipole}, HOMO: {homo}")
+            print(f"    HOF: {hof}, Dipole: {dipole}, HOMO: {homo}")
         else:
-            print(f"   ❌ Failed: {props['error']}")
+            print(f"    Failed: {props['error']}")
 
     # Summary
     successful = sum(1 for r in results if r['success'])
     total_files = sum(len(r.get('temp_files', [])) for r in results if r['success'])
 
-    print(f"\n✅ Summary: {successful}/{len(results)} successful calculations")
+    print(f"\n Summary: {successful}/{len(results)} successful calculations")
     if not cleanup and total_files > 0:
         print(f"📁 Total temporary files kept: {total_files}")
 
@@ -486,52 +486,52 @@ def calculate_pm7_batch_colab(smiles_list, method="PM7", max_molecules=None, cle
 def display_properties_enhanced(props):
     """Display PM7 properties with enhanced formatting."""
     if not props.get('success', False):
-        print(f"❌ Calculation failed: {props.get('error', 'Unknown error')}")
+        print(f" Calculation failed: {props.get('error', 'Unknown error')}")
         return
 
-    print(f"✅ PM7 Properties for {props.get('smiles', 'Unknown')}:")
+    print(f" PM7 Properties for {props.get('smiles', 'Unknown')}:")
     print("=" * 60)
 
     # Core properties
     if 'heat_of_formation' in props:
-        print(f"🔥 Heat of Formation: {props['heat_of_formation']:.3f} kcal/mol")
+        print(f" Heat of Formation: {props['heat_of_formation']:.3f} kcal/mol")
 
     if 'dipole_moment' in props:
-        print(f"⚡ Dipole Moment: {props['dipole_moment']:.3f} Debye")
+        print(f" Dipole Moment: {props['dipole_moment']:.3f} Debye")
         if 'dipole_x' in props:
             print(f"   Components: X={props['dipole_x']:.3f}, Y={props['dipole_y']:.3f}, Z={props['dipole_z']:.3f}")
 
     # Electronic properties
     if 'homo_ev' in props and 'lumo_ev' in props:
-        print(f"🔋 HOMO Energy: {props['homo_ev']:.3f} eV")
-        print(f"🔋 LUMO Energy: {props['lumo_ev']:.3f} eV")
-        print(f"⚡ HOMO-LUMO Gap: {props['gap_ev']:.3f} eV")
+        print(f" HOMO Energy: {props['homo_ev']:.3f} eV")
+        print(f" LUMO Energy: {props['lumo_ev']:.3f} eV")
+        print(f" HOMO-LUMO Gap: {props['gap_ev']:.3f} eV")
 
     if 'ionization_potential' in props:
-        print(f"⚡ Ionization Potential: {props['ionization_potential']:.3f} eV")
+        print(f" Ionization Potential: {props['ionization_potential']:.3f} eV")
 
     # Molecular properties
     if 'molecular_weight' in props:
-        print(f"⚖️  Molecular Weight: {props['molecular_weight']:.2f} g/mol")
+        print(f"  Molecular Weight: {props['molecular_weight']:.2f} g/mol")
 
     if 'point_group' in props:
-        print(f"🔷 Point Group: {props['point_group']}")
+        print(f" Point Group: {props['point_group']}")
 
     if 'filled_levels' in props:
-        print(f"🔢 Filled Levels: {props['filled_levels']}")
+        print(f" Filled Levels: {props['filled_levels']}")
 
     # COSMO properties
     if 'cosmo_area' in props:
-        print(f"📐 COSMO Area: {props['cosmo_area']:.2f} Ų")
+        print(f" COSMO Area: {props['cosmo_area']:.2f} Ų")
 
     if 'cosmo_volume' in props:
-        print(f"📦 COSMO Volume: {props['cosmo_volume']:.2f} ų")
+        print(f" COSMO Volume: {props['cosmo_volume']:.2f} ų")
 
     # Computational info
     if 'computation_time' in props:
-        print(f"⏱️  Computation Time: {props['computation_time']:.3f} seconds")
+        print(f"  Computation Time: {props['computation_time']:.3f} seconds")
 
-    print(f"🧮 Number of Atoms: {props.get('num_atoms', 'N/A')}")
+    print(f" Number of Atoms: {props.get('num_atoms', 'N/A')}")
 
     # File information
     if 'temp_files' in props:
@@ -539,7 +539,7 @@ def display_properties_enhanced(props):
         files_kept = props.get('files_kept', False)
 
         if files_kept and temp_files:
-            print(f"\n📁 Temporary files kept ({len(temp_files)}):")
+            print(f"\n Temporary files kept ({len(temp_files)}):")
             for temp_file in temp_files:
                 file_size = os.path.getsize(temp_file) if os.path.exists(temp_file) else 0
                 print(f"  - {os.path.basename(temp_file)} ({file_size} bytes)")
