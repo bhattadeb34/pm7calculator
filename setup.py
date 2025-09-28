@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="pm7calculator",
     version="0.1.0",
-    author="Your Name", 
+    author="Debjyoti Bhattacharya", 
     description="Simple PM7 calculator for Google Colab",
     packages=find_packages(),
     install_requires=[
