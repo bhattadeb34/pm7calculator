@@ -6,7 +6,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/bhattadeb34/pm7calculator.svg)](https://github.com/bhattadeb34/pm7calculator/issues)
 [![Downloads](https://pepy.tech/badge/pm7calculator)](https://pepy.tech/project/pm7calculator)
 
-**A wrapper around MOPAC and a user-friendly Python package for PM7 semi-empirical quantum chemistry calculations, designed for researchers, educators, and students in computational chemistry, drug discovery, and materials science.**
+**A wrapper around MOPAC and a user-friendly Python package for PM7 semi-empirical quantum chemistry calculations**
 
 ---
 
